@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.midnightas.chococompress.CCompress;
+
 public class Molecule {
 
 	public static final void main(String[] args) throws Exception {
@@ -14,6 +16,7 @@ public class Molecule {
 		String content = oldContent + "";
 		List<Object> stack = new ArrayList<Object>();
 		HashMap<Character, Object> vars = new HashMap<Character, Object>();
+		CCompress.update();
 		addDefaultVariables(vars);
 		for (int al = 0; al < content.length(); al++) {
 			char atom = content.charAt(al);
@@ -65,27 +68,31 @@ public class Molecule {
 				} else if (expression == 'c') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
 					stack.add(new Double(Math.cos(dbl)));
-				} else if(expression == 'p') {
+				} else if (expression == 'p') {
 					stack.add(new Double(Math.PI));
 				}
-			} else if(atom == ':') {
+			} else if (atom == ':') {
 				Object obj = getLatestItemInStack(stack, true);
 				al++;
 				char varChar = content.charAt(al);
-				if(vars.containsKey(varChar))
+				if (vars.containsKey(varChar))
 					vars.remove(varChar);
 				vars.put(varChar, obj);
-			} else if(atom == ';') {
+			} else if (atom == ';') {
 				al++;
 				stack.add(vars.get(content.charAt(al)));
-			} else if(atom == 'V') {
+			} else if (atom == 'V') {
 				System.out.print("[");
 				String toAdd = "";
-				for(int i = 0; i < vars.size(); i++) {
+				for (int i = 0; i < vars.size(); i++) {
 					toAdd += vars.keySet().toArray()[i] + ":" + vars.values().toArray()[i] + ", ";
 				}
 				toAdd = toAdd.substring(0, toAdd.length() - 2);
 				System.out.println(toAdd + "]");
+			} else if (atom == 'c') {
+				stack.add(CCompress.compress(getLatestItemInStack(stack, true).toString()));
+			} else if (atom == 'C') {
+				stack.add(CCompress.decompress(getLatestItemInStack(stack, true).toString()));
 			}
 		}
 		if (stack.size() > 0) {
@@ -105,7 +112,8 @@ public class Molecule {
 	public static void addDefaultVariables(HashMap<Character, Object> vars) {
 		vars.put('M', "Molecule");
 		vars.put('H', "Hello, world!");
-		vars.put('K', "poopy-poop");
+		vars.put('K', "poopy poop");
+		vars.put('I', CCompress.compress("youtube.com/lvivtotoro"));
 	}
 
 	public static Object getLatestItemInStack(List<Object> stack, boolean remove) {
@@ -113,6 +121,9 @@ public class Molecule {
 			return stack.remove(stack.size() - 1);
 		else
 			return stack.get(stack.size() - 1);
+	}
+
+	static {
 	}
 
 }
