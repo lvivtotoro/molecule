@@ -18,6 +18,8 @@ public class Molecule {
 		HashMap<Character, Object> vars = new HashMap<Character, Object>();
 		CCompress.update();
 		addDefaultVariables(vars);
+		boolean wStatement = true;
+		int wIndex = 0;
 		for (int al = 0; al < content.length(); al++) {
 			char atom = content.charAt(al);
 			if (atom >= '0' && atom <= '9') {
@@ -93,8 +95,22 @@ public class Molecule {
 				stack.add(CCompress.compress(getLatestItemInStack(stack, true).toString()));
 			} else if (atom == 'C') {
 				stack.add(CCompress.decompress(getLatestItemInStack(stack, true).toString()));
+			} else if(atom == '~') {
+				printStack(stack);
+				System.out.println();
+			} else if(atom == '.') {
+				stack = new ArrayList<Object>();
+			} else if(atom == '(') {
+				wStatement = true;
+				wIndex = al;
+			} else if(atom == ')') {
+				al = wIndex;
 			}
 		}
+		printStack(stack);
+	}
+	
+	public static void printStack(List<Object> stack) {
 		if (stack.size() > 0) {
 			for (Object cell : stack) {
 				if (cell instanceof Double) {
@@ -108,7 +124,7 @@ public class Molecule {
 			}
 		}
 	}
-
+	
 	public static void addDefaultVariables(HashMap<Character, Object> vars) {
 		vars.put('M', "Molecule");
 		vars.put('H', "Hello, world!");
