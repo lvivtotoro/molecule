@@ -13,26 +13,39 @@ import org.midnightas.chococompress.CCompress;
 public class Molecule {
 
 	public static final void main(String[] args) throws Exception {
-		String oldContent = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), Charset.forName("UTF-16"));
+		String oldContent = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())),
+				Charset.forName("UTF-16"));
 		String content = oldContent + "";
-		List<Object> stack = new ArrayList<Object>();
-		List<Object> aStack = new ArrayList<Object>();
-		HashMap<Character, Object> vars = new HashMap<Character, Object>();
+		Molecule molecule = new Molecule(content);
 		CCompress.update();
+		molecule.run();
+	}
+
+	public List<Object> stack = new ArrayList<Object>();
+	public List<Object> aStack = new ArrayList<Object>();
+	public HashMap<Character, Object> vars = new HashMap<Character, Object>();
+	public String content;
+	public boolean wStatement = false;
+	public int wIndex = 0;
+	public boolean arrayMode = false;
+
+	public Molecule(String content) {
+		this.content = content;
+	}
+
+	public void run() {
 		addDefaultVariables(vars);
-		boolean wStatement = true;
-		int wIndex = 0;
 		for (int al = 0; al < content.length(); al++) {
 			char atom = content.charAt(al);
 			if (atom >= '0' && atom <= '9') {
-				add(stack, aStack, new Double(Double.parseDouble(atom + "")));
+				add(new Double(Double.parseDouble(atom + "")));
 			} else if (atom == '"') {
 				String text = "";
 				for (int al0 = al + 1; al0 < content.length(); al0++) {
 					char atom0 = content.charAt(al0);
 					if (atom0 == '"') {
 						al = al0;
-						add(stack, aStack, text);
+						add(text);
 						break;
 					}
 					text += atom0;
@@ -40,40 +53,40 @@ public class Molecule {
 			} else if (atom == '+') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(stack, aStack, new Double(item0 + item1));
+				add(new Double(item0 + item1));
 			} else if (atom == '-') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(stack, aStack, new Double(item0 - item1));
+				add(new Double(item0 - item1));
 			} else if (atom == '*') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(stack, aStack, new Double(item0 * item1));
+				add(new Double(item0 * item1));
 			} else if (atom == '/') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(stack, aStack, new Double(item0 / item1));
+				add(new Double(item0 / item1));
 			} else if (atom == '%') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(stack, aStack, new Double(item0 % item1));
+				add(new Double(item0 % item1));
 			} else if (atom == 'M') {
 				al++;
 				char expression = content.charAt(al);
 				if (expression == 'q') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					add(stack, aStack, new Double(Math.sqrt(dbl)));
+					add(new Double(Math.sqrt(dbl)));
 				} else if (expression == 'f') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					add(stack, aStack, new Double(Math.floor(dbl)));
+					add(new Double(Math.floor(dbl)));
 				} else if (expression == 's') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					add(stack, aStack, new Double(Math.sin(dbl)));
+					add(new Double(Math.sin(dbl)));
 				} else if (expression == 'c') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					add(stack, aStack, new Double(Math.cos(dbl)));
+					add(new Double(Math.cos(dbl)));
 				} else if (expression == 'p') {
-					add(stack, aStack, new Double(Math.PI));
+					add(new Double(Math.PI));
 				}
 			} else if (atom == ':') {
 				Object obj = getLatestItemInStack(stack, true);
@@ -84,7 +97,7 @@ public class Molecule {
 				vars.put(varChar, obj);
 			} else if (atom == ';') {
 				al++;
-				add(stack, aStack, vars.get(content.charAt(al)));
+				add(vars.get(content.charAt(al)));
 			} else if (atom == 'V') {
 				System.out.print("[");
 				String toAdd = "";
@@ -94,9 +107,9 @@ public class Molecule {
 				toAdd = toAdd.substring(0, toAdd.length() - 2);
 				System.out.println(toAdd + "]");
 			} else if (atom == 'c') {
-				add(stack, aStack, CCompress.compress(getLatestItemInStack(stack, true).toString()));
+				add(CCompress.compress(getLatestItemInStack(stack, true).toString()));
 			} else if (atom == 'C') {
-				add(stack, aStack, CCompress.decompress(getLatestItemInStack(stack, true).toString()));
+				add(CCompress.decompress(getLatestItemInStack(stack, true).toString()));
 			} else if (atom == '~') {
 				printStack(stack);
 				System.out.println();
@@ -116,28 +129,60 @@ public class Molecule {
 						break;
 					}
 				}
+			} else if (atom == '[') {
+				arrayMode = true;
+			} else if (atom == ']') {
+				stack.add(aStack.toArray());
+				aStack = new ArrayList<Object>();
+				arrayMode = false;
+			} else if (atom == 'A') {
+				al++;
+				char expression = content.charAt(al);
+				if (expression == 'a') {
+					List<Object> newList = new ArrayList<Object>();
+					for (Object o : (Object[]) getLatestItemInStack(stack, true))
+						for (int i = 0; i < 2; i++)
+							newList.add(o);
+					add(newList.toArray());
+				}
+			} else if(atom == '\'') {
+				al++;
+				add(content.charAt(al));
 			}
 		}
 		printStack(stack);
 	}
 
-	public static void add(List<Object> stack, List<Object> aStack, Object object) {
-		stack.add(object);
+	public void add(Object object) {
+		if (!arrayMode)
+			stack.add(object);
+		else
+			aStack.add(object);
 	}
 
 	public static void printStack(List<Object> stack) {
 		if (stack.size() > 0) {
 			for (Object cell : stack) {
-				if (cell instanceof Double) {
-					Double dbl = (Double) cell;
-					if (Double.toString(dbl).endsWith(".0"))
-						System.out.print(dbl.intValue());
-					else
-						System.out.print(dbl);
-				} else
-					System.out.print(cell);
+				printObject(cell);
 			}
 		}
+	}
+
+	public static void printObject(Object cell) {
+		if (cell instanceof Double) {
+			Double dbl = (Double) cell;
+			if (Double.toString(dbl).endsWith(".0"))
+				System.out.print(dbl.intValue());
+			else
+				System.out.print(dbl);
+		} else if (cell instanceof Object[]) {
+			System.out.print("[");
+			for (Object obj : (Object[]) cell) {
+				printObject(obj);
+			}
+			System.out.print("]");
+		} else
+			System.out.print(cell);
 	}
 
 	public static void addDefaultVariables(HashMap<Character, Object> vars) {
