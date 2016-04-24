@@ -7,16 +7,20 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Scanner;
 
 import org.midnightas.chococompress.CCompress;
 
 public class Molecule {
-
+	
+	public static Scanner scanner;
+	
 	public static final void main(String[] args) throws Exception {
-		if(args.length == 0) {
+		scanner = new Scanner(new UnclosableDecorator(System.in));
+		if (args.length == 0) {
 			System.err.println("Enter the .mol file location.");
 			System.exit(0);
-		} else if(args.length == 1) {
+		} else if (args.length == 1) {
 			System.err.println("Please enter the file encoding.");
 			System.exit(0);
 		}
@@ -152,9 +156,68 @@ public class Molecule {
 			} else if (atom == '\'') {
 				al++;
 				add(content.charAt(al));
+			} else if (atom == '=') {
+				add(new Boolean(getLatestItemInStack(stack, true).equals(getLatestItemInStack(stack, true))));
+			} else if (atom == '?') {
+				if (!((Boolean) getLatestItemInStack(stack, true))) {
+					int statements = 0;
+					for (int al0 = al; al0 < content.length(); al0++) {
+						char a0 = content.charAt(al0);
+						if (a0 == '?') {
+							statements++;
+						} else if (a0 == '¿') {
+							statements--;
+							if (statements == 0) {
+								al = al0;
+								break;
+							}
+						}
+					}
+				}
+			} else if (atom == 'p') {
+				add(new Boolean((isPrime(((Double) getLatestItemInStack(stack, true)).intValue()))));
+			} else if (atom == 'I') {
+				add(scanner.nextLine());
+			} else if(atom == 'n') {
+				Object obj = getLatestItemInStack(stack, true);
+				if(obj instanceof String)
+					add(Double.parseDouble(obj.toString()));
+				else if(obj instanceof Character)
+					add(new Double((Character) obj));
+			} else if(atom == 's') {
+				add(getLatestItemInStack(stack, true).toString());
+			} else if(atom == 'h') {
+				Object obj = getLatestItemInStack(stack, true);
+				if(obj instanceof Double) {
+					add(new Character((char) ((Double) obj).intValue()));
+				}
+			} else if(atom == '`') {
+				al++;
+				char expression = content.charAt(al);
+				if(expression == 'q') {
+					add(content);
+				} else if(expression == 'n') {
+					content = getLatestItemInStack(stack, true).toString();
+				} else if(expression == 'a') {
+					content += getLatestItemInStack(stack, true);
+				}
 			}
 		}
 		printStack(stack);
+	}
+
+	public static boolean isPrime(int number) {
+		int limit = (int) (1 + Math.sqrt(number));
+		if (number < 1)
+			return false;
+		if (number == 2)
+			return true;
+		if (number % 2 == 0)
+			return false;
+		for (int i = 3; i < limit; i += 2)
+			if (number % i == 0)
+				return false;
+		return true;
 	}
 
 	public void add(Object object) {
