@@ -1,7 +1,7 @@
 package org.midnightas.molecule;
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -13,10 +13,14 @@ import org.midnightas.chococompress.CCompress;
 public class Molecule {
 
 	public static final void main(String[] args) throws Exception {
-		String oldContent = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())),
-				Charset.forName("UTF-16"));
-		String content = oldContent + "";
-		Molecule molecule = new Molecule(content);
+		if(args.length == 0) {
+			System.err.println("Enter the .mol file location.");
+			System.exit(0);
+		} else if(args.length == 1) {
+			System.err.println("Please enter the file encoding.");
+			System.exit(0);
+		}
+		Molecule molecule = new Molecule(new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), args[1]));
 		CCompress.update();
 		molecule.run();
 	}
@@ -29,7 +33,7 @@ public class Molecule {
 	public int wIndex = 0;
 	public boolean arrayMode = false;
 
-	public Molecule(String content) {
+	public Molecule(String content) throws UnsupportedEncodingException {
 		this.content = content;
 	}
 
@@ -145,7 +149,7 @@ public class Molecule {
 							newList.add(o);
 					add(newList.toArray());
 				}
-			} else if(atom == '\'') {
+			} else if (atom == '\'') {
 				al++;
 				add(content.charAt(al));
 			}
