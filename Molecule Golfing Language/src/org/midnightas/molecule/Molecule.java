@@ -1,6 +1,7 @@
 package org.midnightas.molecule;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -12,9 +13,10 @@ import org.midnightas.chococompress.CCompress;
 public class Molecule {
 
 	public static final void main(String[] args) throws Exception {
-		String oldContent = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())));
+		String oldContent = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), Charset.forName("UTF-16"));
 		String content = oldContent + "";
 		List<Object> stack = new ArrayList<Object>();
+		List<Object> aStack = new ArrayList<Object>();
 		HashMap<Character, Object> vars = new HashMap<Character, Object>();
 		CCompress.update();
 		addDefaultVariables(vars);
@@ -23,14 +25,14 @@ public class Molecule {
 		for (int al = 0; al < content.length(); al++) {
 			char atom = content.charAt(al);
 			if (atom >= '0' && atom <= '9') {
-				stack.add(new Double(Double.parseDouble(atom + "")));
+				add(stack, aStack, new Double(Double.parseDouble(atom + "")));
 			} else if (atom == '"') {
 				String text = "";
 				for (int al0 = al + 1; al0 < content.length(); al0++) {
 					char atom0 = content.charAt(al0);
 					if (atom0 == '"') {
 						al = al0;
-						stack.add(text);
+						add(stack, aStack, text);
 						break;
 					}
 					text += atom0;
@@ -38,40 +40,40 @@ public class Molecule {
 			} else if (atom == '+') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				stack.add(new Double(item0 + item1));
+				add(stack, aStack, new Double(item0 + item1));
 			} else if (atom == '-') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				stack.add(new Double(item0 - item1));
+				add(stack, aStack, new Double(item0 - item1));
 			} else if (atom == '*') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				stack.add(new Double(item0 * item1));
+				add(stack, aStack, new Double(item0 * item1));
 			} else if (atom == '/') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				stack.add(new Double(item0 / item1));
+				add(stack, aStack, new Double(item0 / item1));
 			} else if (atom == '%') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
-				stack.add(new Double(item0 % item1));
+				add(stack, aStack, new Double(item0 % item1));
 			} else if (atom == 'M') {
 				al++;
 				char expression = content.charAt(al);
 				if (expression == 'q') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					stack.add(new Double(Math.sqrt(dbl)));
+					add(stack, aStack, new Double(Math.sqrt(dbl)));
 				} else if (expression == 'f') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					stack.add(new Double(Math.floor(dbl)));
+					add(stack, aStack, new Double(Math.floor(dbl)));
 				} else if (expression == 's') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					stack.add(new Double(Math.sin(dbl)));
+					add(stack, aStack, new Double(Math.sin(dbl)));
 				} else if (expression == 'c') {
 					Double dbl = (Double) getLatestItemInStack(stack, true);
-					stack.add(new Double(Math.cos(dbl)));
+					add(stack, aStack, new Double(Math.cos(dbl)));
 				} else if (expression == 'p') {
-					stack.add(new Double(Math.PI));
+					add(stack, aStack, new Double(Math.PI));
 				}
 			} else if (atom == ':') {
 				Object obj = getLatestItemInStack(stack, true);
@@ -82,7 +84,7 @@ public class Molecule {
 				vars.put(varChar, obj);
 			} else if (atom == ';') {
 				al++;
-				stack.add(vars.get(content.charAt(al)));
+				add(stack, aStack, vars.get(content.charAt(al)));
 			} else if (atom == 'V') {
 				System.out.print("[");
 				String toAdd = "";
@@ -92,24 +94,37 @@ public class Molecule {
 				toAdd = toAdd.substring(0, toAdd.length() - 2);
 				System.out.println(toAdd + "]");
 			} else if (atom == 'c') {
-				stack.add(CCompress.compress(getLatestItemInStack(stack, true).toString()));
+				add(stack, aStack, CCompress.compress(getLatestItemInStack(stack, true).toString()));
 			} else if (atom == 'C') {
-				stack.add(CCompress.decompress(getLatestItemInStack(stack, true).toString()));
-			} else if(atom == '~') {
+				add(stack, aStack, CCompress.decompress(getLatestItemInStack(stack, true).toString()));
+			} else if (atom == '~') {
 				printStack(stack);
 				System.out.println();
-			} else if(atom == '.') {
+			} else if (atom == '.') {
 				stack = new ArrayList<Object>();
-			} else if(atom == '(') {
+			} else if (atom == '(') {
 				wStatement = true;
 				wIndex = al;
-			} else if(atom == ')') {
-				al = wIndex;
+			} else if (atom == ')') {
+				if (wStatement)
+					al = wIndex;
+			} else if (atom == '!') {
+				wStatement = false;
+				for (int al0 = al + 1; al0 < content.length(); al0++) {
+					if (al0 == ')') {
+						al = al0;
+						break;
+					}
+				}
 			}
 		}
 		printStack(stack);
 	}
-	
+
+	public static void add(List<Object> stack, List<Object> aStack, Object object) {
+		stack.add(object);
+	}
+
 	public static void printStack(List<Object> stack) {
 		if (stack.size() > 0) {
 			for (Object cell : stack) {
@@ -124,12 +139,12 @@ public class Molecule {
 			}
 		}
 	}
-	
+
 	public static void addDefaultVariables(HashMap<Character, Object> vars) {
 		vars.put('M', "Molecule");
 		vars.put('H', "Hello, world!");
 		vars.put('K', "poopy poop");
-		vars.put('I', CCompress.compress("youtube.com/lvivtotoro"));
+		vars.put('I', CCompress.compress("youtube.com/lvivtotoro  "));
 	}
 
 	public static Object getLatestItemInStack(List<Object> stack, boolean remove) {
