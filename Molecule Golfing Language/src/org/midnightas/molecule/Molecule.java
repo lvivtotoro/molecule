@@ -198,6 +198,7 @@ public class Molecule {
 					add(content);
 				} else if(expression == 'n') {
 					content = getLatestItemInStack(stack, true).toString();
+					al = -1;
 				} else if(expression == 'a') {
 					content += getLatestItemInStack(stack, true);
 				}
