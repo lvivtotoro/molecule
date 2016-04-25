@@ -202,6 +202,8 @@ public class Molecule {
 				} else if(expression == 'a') {
 					content += getLatestItemInStack(stack, true);
 				}
+			} else if(atom == '_') {
+				add(getLatestItemInStack(stack, false));
 			}
 		}
 		printStack(stack);
