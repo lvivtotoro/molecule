@@ -210,6 +210,8 @@ public class Molecule {
 				}
 			} else if (atom == '_') {
 				add(getLatestItemInStack(stack, false));
+			} else if(atom == '#') {
+				add(getLatestItemInStack(stack, true).toString().length());
 			}
 		}
 		printStack(stack);
