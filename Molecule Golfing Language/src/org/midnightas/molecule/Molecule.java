@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
@@ -12,9 +13,9 @@ import java.util.Scanner;
 import org.midnightas.chococompress.CCompress;
 
 public class Molecule {
-	
+
 	public static Scanner scanner;
-	
+
 	public static final void main(String[] args) throws Exception {
 		scanner = new Scanner(new UnclosableDecorator(System.in));
 		if (args.length == 0) {
@@ -25,6 +26,7 @@ public class Molecule {
 			System.exit(0);
 		}
 		Molecule molecule = new Molecule(new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), args[1]));
+		CCompress.chars.addAll(new ArrayList<Character>(Arrays.asList('+','-','*','/')));
 		CCompress.update();
 		molecule.run();
 	}
@@ -51,7 +53,11 @@ public class Molecule {
 				String text = "";
 				for (int al0 = al + 1; al0 < content.length(); al0++) {
 					char atom0 = content.charAt(al0);
-					if (atom0 == '"') {
+					if (atom0 == '\\') {
+						al0++;
+						text += content.charAt(al0);
+						continue;
+					} else if (atom0 == '"') {
 						al = al0;
 						add(text);
 						break;
@@ -178,31 +184,31 @@ public class Molecule {
 				add(new Boolean((isPrime(((Double) getLatestItemInStack(stack, true)).intValue()))));
 			} else if (atom == 'I') {
 				add(scanner.nextLine());
-			} else if(atom == 'n') {
+			} else if (atom == 'n') {
 				Object obj = getLatestItemInStack(stack, true);
-				if(obj instanceof String)
+				if (obj instanceof String)
 					add(Double.parseDouble(obj.toString()));
-				else if(obj instanceof Character)
+				else if (obj instanceof Character)
 					add(new Double((Character) obj));
-			} else if(atom == 's') {
+			} else if (atom == 's') {
 				add(getLatestItemInStack(stack, true).toString());
-			} else if(atom == 'h') {
+			} else if (atom == 'h') {
 				Object obj = getLatestItemInStack(stack, true);
-				if(obj instanceof Double) {
+				if (obj instanceof Double) {
 					add(new Character((char) ((Double) obj).intValue()));
 				}
-			} else if(atom == '`') {
+			} else if (atom == '`') {
 				al++;
 				char expression = content.charAt(al);
-				if(expression == 'q') {
+				if (expression == 'q') {
 					add(content);
-				} else if(expression == 'n') {
+				} else if (expression == 'n') {
 					content = getLatestItemInStack(stack, true).toString();
 					al = -1;
-				} else if(expression == 'a') {
+				} else if (expression == 'a') {
 					content += getLatestItemInStack(stack, true);
 				}
-			} else if(atom == '_') {
+			} else if (atom == '_') {
 				add(getLatestItemInStack(stack, false));
 			}
 		}
