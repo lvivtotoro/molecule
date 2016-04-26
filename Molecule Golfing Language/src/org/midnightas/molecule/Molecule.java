@@ -26,7 +26,7 @@ public class Molecule {
 			System.exit(0);
 		}
 		Molecule molecule = new Molecule(new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), args[1]));
-		CCompress.chars.addAll(new ArrayList<Character>(Arrays.asList('+','-','*','/')));
+		CCompress.chars.addAll(new ArrayList<Character>(Arrays.asList('+', '-', '*', '/')));
 		CCompress.update();
 		molecule.run();
 	}
@@ -45,6 +45,11 @@ public class Molecule {
 
 	public void run() {
 		addDefaultVariables(vars);
+		interpret(content);
+		printStack(stack);
+	}
+
+	public void interpret(String content) {
 		for (int al = 0; al < content.length(); al++) {
 			char atom = content.charAt(al);
 			if (atom >= '0' && atom <= '9') {
@@ -210,11 +215,40 @@ public class Molecule {
 				}
 			} else if (atom == '_') {
 				add(getLatestItemInStack(stack, false));
-			} else if(atom == '#') {
+			} else if (atom == '#') {
 				add(getLatestItemInStack(stack, true).toString().length());
+			} else if (atom == '{') {
+				String block = "";
+				int statement = 1;
+				for (int al0 = al + 1; al0 < content.length(); al0++) {
+					char c = content.charAt(al0);
+					if (c == '{')
+						statement++;
+					else if (c == '}') {
+						statement--;
+						if (statement == 0) {
+							al = al0;
+							break;
+						}
+					}
+					block += c;
+				}
+				add(new CodeBlock(block));
+			} else if (atom == 'R') {
+				String newc = ((CodeBlock) getLatestItemInStack(stack, true)).content;
+				interpret(newc);
+			} else if (atom == 'b') {
+				Object obj0 = getLatestItemInStack(stack, true);
+				Object obj1 = getLatestItemInStack(stack, true);
+				add(obj0);
+				add(obj1);
+			} else if(atom == 'L') {
+				int amount = ((Double) getLatestItemInStack(stack, true)).intValue();
+				String newc = ((CodeBlock) getLatestItemInStack(stack, true)).content;
+				for(int i = 0; i < amount; i++)
+					interpret(newc);
 			}
 		}
-		printStack(stack);
 	}
 
 	public static boolean isPrime(int number) {
@@ -259,6 +293,10 @@ public class Molecule {
 				printObject(obj);
 			}
 			System.out.print("]");
+		} else if (cell instanceof CodeBlock) {
+			System.out.print("{");
+			System.out.print(((CodeBlock) cell).content);
+			System.out.print("}");
 		} else
 			System.out.print(cell);
 	}
@@ -275,6 +313,14 @@ public class Molecule {
 			return stack.remove(stack.size() - 1);
 		else
 			return stack.get(stack.size() - 1);
+	}
+
+	public static class CodeBlock {
+		public String content;
+
+		public CodeBlock(String content) {
+			this.content = content;
+		}
 	}
 
 	static {
