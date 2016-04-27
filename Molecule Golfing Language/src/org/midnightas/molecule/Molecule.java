@@ -184,6 +184,7 @@ public class Molecule {
 							}
 						}
 					}
+					al++;
 				}
 			} else if (atom == 'p') {
 				add(new Boolean((isPrime(((Double) getLatestItemInStack(stack, true)).intValue()))));
@@ -242,11 +243,25 @@ public class Molecule {
 				Object obj1 = getLatestItemInStack(stack, true);
 				add(obj0);
 				add(obj1);
-			} else if(atom == 'L') {
+			} else if (atom == 'L') {
 				int amount = ((Double) getLatestItemInStack(stack, true)).intValue();
 				String newc = ((CodeBlock) getLatestItemInStack(stack, true)).content;
-				for(int i = 0; i < amount; i++)
+				for (int i = 0; i < amount; i++)
 					interpret(newc);
+			} else if (atom == 't') {
+				break;
+			} else if(atom == 'u') {
+				String number = "";
+				for(int al0 = al + 1; al0 < content.length(); al0++) {
+					char c = content.charAt(al0);
+					if(c >= '0' && c <= '9') {
+						number += c;
+					} else {
+						al = al0 - 1;
+						break;
+					}
+				}
+				add(new Double(Double.parseDouble(number)));
 			}
 		}
 	}
