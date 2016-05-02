@@ -25,7 +25,12 @@ public class Molecule {
 			System.err.println("Please enter the file encoding.");
 			System.exit(0);
 		}
-		Molecule molecule = new Molecule(new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), args[1]));
+		String content = "";
+		if(args[0].startsWith("/"))
+			content = new String(Files.readAllBytes(Paths.get(new File(args[0]).toURI())), args[1]);
+		else
+			content = args[0];
+		Molecule molecule = new Molecule(content);
 		CCompress.chars.addAll(new ArrayList<Character>(Arrays.asList('+', '-', '*', '/')));
 		CCompress.update();
 		molecule.run();
@@ -70,9 +75,14 @@ public class Molecule {
 					text += atom0;
 				}
 			} else if (atom == '+') {
-				Double item1 = (Double) getLatestItemInStack(stack, true);
-				Double item0 = (Double) getLatestItemInStack(stack, true);
-				add(new Double(item0 + item1));
+				Object obj1 = getLatestItemInStack(stack, true);
+				Object obj0 = getLatestItemInStack(stack, true);
+				if (obj1 instanceof Double && obj0 instanceof Double)
+					add((Double) obj0 + (Double) obj1);
+				else if (obj1 instanceof Double && obj0 instanceof Character)
+					add(new Character((char) ((Character) obj0 + (Double) obj1)));
+				else if (obj0 instanceof String && obj1 instanceof String)
+					add(obj0.toString() + obj1.toString());
 			} else if (atom == '-') {
 				Double item1 = (Double) getLatestItemInStack(stack, true);
 				Double item0 = (Double) getLatestItemInStack(stack, true);
@@ -163,6 +173,17 @@ public class Molecule {
 						for (int i = 0; i < 2; i++)
 							newList.add(o);
 					add(newList.toArray());
+				} else if (expression == 'r') {
+					if (getLatestItemInStack(stack, false) instanceof Object[]) {
+						List<Object> newList = new ArrayList<Object>();
+						Object[] array = (Object[]) getLatestItemInStack(stack, true);
+						for (int i = array.length - 1; i >= 0; i--)
+							newList.add(array[i]);
+						add(newList.toArray());
+					} else if (getLatestItemInStack(stack, false) instanceof String) {
+						String str = (String) getLatestItemInStack(stack, true);
+						add(new StringBuilder(str).reverse().toString());
+					}
 				}
 			} else if (atom == '\'') {
 				al++;
@@ -250,11 +271,11 @@ public class Molecule {
 					interpret(newc);
 			} else if (atom == 't') {
 				break;
-			} else if(atom == 'u') {
+			} else if (atom == 'u') {
 				String number = "";
-				for(int al0 = al + 1; al0 < content.length(); al0++) {
+				for (int al0 = al + 1; al0 < content.length(); al0++) {
 					char c = content.charAt(al0);
-					if(c >= '0' && c <= '9') {
+					if (c >= '0' && c <= '9') {
 						number += c;
 					} else {
 						al = al0 - 1;
@@ -262,6 +283,18 @@ public class Molecule {
 					}
 				}
 				add(new Double(Double.parseDouble(number)));
+			} else if (atom == 'w') {
+				try {
+					Thread.sleep(((Double) getLatestItemInStack(stack, true)).longValue());
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			} else if (atom == 'я') {
+				List<Object> list = new ArrayList<Object>();
+				for (String s : ((String) getLatestItemInStack(stack, true)).split(" ")) {
+					list.add(s);
+				}
+				add(list.toArray());
 			}
 		}
 	}
@@ -304,10 +337,12 @@ public class Molecule {
 				System.out.print(dbl);
 		} else if (cell instanceof Object[]) {
 			System.out.print("[");
+			String toAdd = "";
 			for (Object obj : (Object[]) cell) {
-				printObject(obj);
+				toAdd += obj;
+				toAdd += " ";
 			}
-			System.out.print("]");
+			System.out.print(toAdd.substring(0, toAdd.length() - 1) + "]");
 		} else if (cell instanceof CodeBlock) {
 			System.out.print("{");
 			System.out.print(((CodeBlock) cell).content);
